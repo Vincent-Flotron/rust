@@ -4,26 +4,11 @@ fn main() {
     slices_and_refs();
     
     // Exs with dereferencing
-    dereference();
-    
+    refs();
+
+    // Vec::<i32> vct = Vec::<i32>(1);
+
 }
-
-
-
-fn dereference() {
-    let mut txtToUnref: &mut String = &mut String::from("Hello I'm a ref !; ");
-
-    // Use the ref like an object straightly calling tis methods
-    txtToUnref.push_str("holaaaaaaa; ");
-    txtToUnref.push_str(String::from(txtToUnref.as_str()).as_str());
-
-    // Use the ref by directly changing its value deferencing itself 
-    *txtToUnref = String::from(format!("; {} {}", txtToUnref.as_str(), "Really fun ;)"));
-    
-    // print the result
-    println!("txtToUnref: {}", txtToUnref);
-}
-
 
 
 /* 
@@ -89,4 +74,44 @@ fn create_array(init_value: i32) -> [i32; 32] {
     const LEN: usize = 32;
     let new_array = [init_value; LEN];
     return new_array;
+}
+
+fn dereference() {
+    let mut txtToUnref: &mut String = &mut String::from("Hello I'm a ref !; ");
+
+    // Use the ref like an object straightly calling tis methods
+    txtToUnref.push_str("holaaaaaaa; ");
+    txtToUnref.push_str(String::from(txtToUnref.as_str()).as_str());
+
+    // Use the ref by directly changing its value deferencing itself 
+    *txtToUnref = String::from(format!("; {} {}", txtToUnref.as_str(), "Really fun ;)"));
+    
+    // print the result
+    println!("txtToUnref: {}", txtToUnref);
+}
+
+fn dereference2(txt_returned: &mut String) -> String {
+    let mut txt_to_unref = String::from("Hello I'm a ref !; ");
+
+    // Use the ref like an object straightly calling tis methods
+    txt_to_unref.push_str("holaaaaaaa; ");
+    txt_to_unref.push_str("_and_");
+    txt_to_unref.push_str(String::from(txt_to_unref.as_str()).as_str());
+
+    // Use the ref by directly changing its value deferencing itself 
+    txt_to_unref = String::from(format!("; {} {}", txt_to_unref.as_str(), "Really fun ;)"));
+    
+    // print the result
+    println!("txtToUnref: {}", txt_to_unref);
+    *txt_returned = txt_to_unref.clone();
+
+    txt_to_unref
+}
+
+fn refs(){
+    dereference();
+    let mut sentence2 = String::from("");
+    let sentence = dereference2(&mut sentence2);
+    println!("sentence = {}",sentence);
+    println!("sentence2 = {}",sentence2);
 }
