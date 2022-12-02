@@ -47,3 +47,9 @@ cargo run
 
 Install the app "rust-analyzer". (v0.3.1238 was used this time)
 Install the app "Rust Syntax". (v0.6.1 was used this time)
+
+### Install a missing crate
+
+```
+cargo install chrono
+``
