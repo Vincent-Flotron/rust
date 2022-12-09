@@ -3,6 +3,11 @@ use std::env;
 use std::fs;
 use std::process;
 use std::time;
+use regex::Regex;
+use regex::CaptureMatches;
+use lazy_static::lazy_static;
+use std::io::Write;
+
 
 fn main()-> Result<(), std::io::Error> {
     Print("Started.");
@@ -28,14 +33,29 @@ fn main()-> Result<(), std::io::Error> {
 
     /* (2) */
     let strt = time::Instant::now();    // to measure the time
-    Print("Start measuring the time: " + strt. ToString("hh\\:mm\\:ss\\.ffff") + ".");
+    Print("Start measuring the time");
 
+    // Extract the datas from the input file
+    Print("Extract the datas.");
+    let matches = ExtractDatasFromString(&content);
+
+    // Reshape the datas
+    Print("Reshape.");
+    let mut values = ReshapeDatas(matches);
+
+    // Sort the datas
+    Print("Sort.");
+    values.sort();
+    values.reverse();
 
     // Measure the time used for the step 2
     let dt = strt.elapsed();
-    Print("Stop measuring the time. dt:  " + dt.ToString("hh\\:mm\\:ss\\.ffff") + ".");
+    Print(format!("Stop measuring the time. dt: {}.", dt.as_secs_f64()).as_str());
 
-
+    /* (3, 4) */
+    // Write the ouptut file
+    Print(format!("Write the output file \"{}\".", outputpath).as_str());
+    WriteFile(outputpath, values, dt);
 
     Print("Finished.");
     Ok(())
@@ -44,6 +64,36 @@ fn main()-> Result<(), std::io::Error> {
 //#################################################################################################
 // Functions
 //#############################################################################################
+fn ExtractDatasFromString(content: &String) -> CaptureMatches {
+    lazy_static! {
+        static ref reg: Regex = Regex::new("(?:\"PA)(?<postnb>\\d+?)(?::proALPHA:)(?<nb>[^\":\\r\\n]+)(?:\")").unwrap();
+    }
+    let matches: CaptureMatches = reg.captures_iter(content.as_str());
+    matches
+}
+
+fn WriteFile(outputpath: String, values: Vec<String>, dt: std::time::Duration){
+    let mut output = std::fs::File::create(outputpath).unwrap();
+    
+    write!(output, "{}", format!("Zeit {}", dt.as_secs_f64())).expect("Error when writing");
+
+    for line in values {
+        write!(output, "{}", line).expect("Error when writing");
+    }
+}
+
+fn ReshapeDatas(matches: CaptureMatches) -> Vec<String> {
+    let mut values: Vec<String> = Vec::new();
+    // List<string> values = new List<string>(matches.Count);
+
+    for m in matches {
+        values.push(format!("{}{}", &m[2], &m[1]));
+        print!("{}{}", &m[2], &m[1]);
+    }
+
+    values
+}
+
 fn DealingWithArgsOk(args: Vec<String>, inputpath: &mut String, outputpath: &mut String) -> bool
 {
     let in_path = env::current_dir();
@@ -88,5 +138,5 @@ fn DisplayHelp(){
 }
 
 fn Print(txt:&str){
-    println!("{:?}: {}", chrono::offset::Local::now(), txt);
+    println!("{:?}: {}", chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S:%3f").to_string(), txt);
 }
