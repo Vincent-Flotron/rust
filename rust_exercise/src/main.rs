@@ -1,8 +1,7 @@
-use chrono;
+use chrono::{DateTime, NaiveTime, NaiveDate, NaiveDateTime, Local, Duration};
 use std::env;
 use std::fs;
 use std::process;
-use std::time;
 use regex::Regex;
 use regex::CaptureMatches;
 use lazy_static::lazy_static;
@@ -26,8 +25,8 @@ fn main()-> Result<(), std::io::Error> {
         .expect("Should have been able to read the file");
 
     /* (2) */
-    let strt = time::Instant::now();    // to measure the time
-    Print("Start measuring the time");
+    let strt = chrono::offset::Local::now();    // to measure the time
+    Print(format!("Start measuring the time at {}.", datetime_to_HHMMSSffff(strt)).as_str());
 
     // Extract the datas from the input file
     Print("Extract the datas.");
@@ -43,8 +42,8 @@ fn main()-> Result<(), std::io::Error> {
     values.reverse();
 
     // Measure the time used for the step 2
-    let dt = strt.elapsed();
-    Print(format!("Stop measuring the time. dt: {}.", dt.as_secs_f64()).as_str());
+    let dt = chrono::offset::Local::now()-strt;
+    Print(format!("Stop measuring the time. dt: {}.{}", dt.num_seconds(), dt.num_milliseconds()).as_str());
 
     /* (3, 4) */
     // Write the ouptut file
@@ -58,18 +57,32 @@ fn main()-> Result<(), std::io::Error> {
 //#################################################################################################
 // Functions
 //#############################################################################################
+fn datetime_to_HHMMSSffff(time: DateTime<Local>) -> String {
+    // let time_as_string = time.format("%Y-%m-%d %H:%M:%S.%f").to_string();
+    lazy_static! {
+        static ref REG_HHMMSSFFFF: Regex = Regex::new(r"(\d{2}:\d{2}:\d{2}\.\d{4})").unwrap();
+    }
+    REG_HHMMSSFFFF.captures(time.format("%Y-%m-%d %H:%M:%S.%f").to_string().as_str())
+        .unwrap()[0]
+        .to_string()
+}
+
+
 fn ExtractDatasFromString(content: &String) -> CaptureMatches {
     lazy_static! {
-        static ref reg: Regex = Regex::new("(?:\"PA)(\\d+?)(?::proALPHA:)([^\":\\r\\n]+)(?:\")").unwrap();
+        static ref REG: Regex = Regex::new("(?:\"PA)(\\d+?)(?::proALPHA:)([^\":\\r\\n]+)(?:\")").unwrap();
     }
-    let matches: CaptureMatches = reg.captures_iter(content.as_str());
+    let matches: CaptureMatches = REG.captures_iter(content.as_str());
     matches
 }
 
-fn WriteFile(outputpath: String, values: Vec<String>, dt: std::time::Duration){
+fn WriteFile(outputpath: String, values: Vec<String>, dt: Duration){
+    let time = DateTime::parse_from_rfc3339("2000-01-01T00:00:00+01:00").unwrap() + dt;
+    let time: DateTime<Local> = DateTime::<Local>::from(time);
+    
     let mut output = std::fs::File::create(outputpath).unwrap();
     
-    writeln!(output, "{}", format!("Zeit {}", dt.as_secs_f64())).expect("Error when writing");
+    writeln!(output, "{}", format!("Zeit {}", datetime_to_HHMMSSffff(time))).expect("Error when writing");
 
     for line in values {
         writeln!(output, "{}", line).expect("Error when writing");
