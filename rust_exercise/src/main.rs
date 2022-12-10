@@ -16,20 +16,14 @@ fn main()-> Result<(), std::io::Error> {
     let mut inputpath = String::from("");
     let mut outputpath = String::from("");
 
-    // dbg!(args);
-    // let args:Vec<String> = env::args().collect();
-    let mut args:Vec<String> = Vec::new();
-    let str1 = String::from("Input.txt");
-    let str2 = String::from("Output.txt");
-    args.push(str1);
-    args.push(str2);
+    // Arguments
+    let args: Vec<String> = env::args().collect();
     if !DealingWithArgsOk(args, &mut inputpath, &mut outputpath) { process::exit(0x0100);}
 
     // Open and read all the file
     Print(&format!("Read the input file \"{}\".", inputpath));
     let content = fs::read_to_string(inputpath)
         .expect("Should have been able to read the file");
-    // Print(&content);
 
     /* (2) */
     let strt = time::Instant::now();    // to measure the time
@@ -66,7 +60,7 @@ fn main()-> Result<(), std::io::Error> {
 //#############################################################################################
 fn ExtractDatasFromString(content: &String) -> CaptureMatches {
     lazy_static! {
-        static ref reg: Regex = Regex::new("(?:\"PA)(?<postnb>\\d+?)(?::proALPHA:)(?<nb>[^\":\\r\\n]+)(?:\")").unwrap();
+        static ref reg: Regex = Regex::new("(?:\"PA)(\\d+?)(?::proALPHA:)([^\":\\r\\n]+)(?:\")").unwrap();
     }
     let matches: CaptureMatches = reg.captures_iter(content.as_str());
     matches
@@ -75,20 +69,18 @@ fn ExtractDatasFromString(content: &String) -> CaptureMatches {
 fn WriteFile(outputpath: String, values: Vec<String>, dt: std::time::Duration){
     let mut output = std::fs::File::create(outputpath).unwrap();
     
-    write!(output, "{}", format!("Zeit {}", dt.as_secs_f64())).expect("Error when writing");
+    writeln!(output, "{}", format!("Zeit {}", dt.as_secs_f64())).expect("Error when writing");
 
     for line in values {
-        write!(output, "{}", line).expect("Error when writing");
+        writeln!(output, "{}", line).expect("Error when writing");
     }
 }
 
 fn ReshapeDatas(matches: CaptureMatches) -> Vec<String> {
-    let mut values: Vec<String> = Vec::new();
-    // List<string> values = new List<string>(matches.Count);
+    let mut values: Vec<String> = Vec::with_capacity(10_000_000);
 
     for m in matches {
         values.push(format!("{}{}", &m[2], &m[1]));
-        print!("{}{}", &m[2], &m[1]);
     }
 
     values
@@ -107,18 +99,18 @@ fn DealingWithArgsOk(args: Vec<String>, inputpath: &mut String, outputpath: &mut
     }
 
     // No args. Use default parameters
-    if args.len() == 0 {
+    if args.len() <= 1 {
         return true;
     }
     // Help
-    if args[0]=="--help" || args[0]=="-h" {
+    if args[1]=="--help" || args[1]=="-h" {
         DisplayHelp();
         return false;
     }
     // Path of input and output files
-    else if args[0] != "" && args.len() > 1 && args[1] != "" {
-        *inputpath = format!("{}", args[0]);
-        *outputpath = format!("{}", args[1]);
+    else if args[1] != "" && args.len() > 2 && args[2] != "" {
+        *inputpath = format!("{}", args[1]);
+        *outputpath = format!("{}", args[2]);
     }
     // Bad arguments
     else {
@@ -138,5 +130,5 @@ fn DisplayHelp(){
 }
 
 fn Print(txt:&str){
-    println!("{:?}: {}", chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S:%3f").to_string(), txt);
+    println!("{:?}: {}", chrono::offset::Local::now().format("%Y-%m-%d %H:%M:%S.%3f").to_string(), txt);
 }
